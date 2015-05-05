@@ -53,8 +53,6 @@ type SubredditInfo struct {
 }
 
 func getRedditSubredditData(source_data DataObject) DataObject {
-	fmt.Printf("Updating %s \n", source_data.Source.Title)
-
 	info := getRawSubredditMeta(source_data.Source.Url)
 	source_data.Source.Title = info.Title
 	source_data.Source.Description = info.Description
@@ -96,7 +94,6 @@ func getRawSubredditPosts(source_url string, sort string) []redditPost {
 
 	// TODO: Paginated Results Gaunteeing at least 200 playable tracks
 	target_url := fmt.Sprintf("%s.json?%s&limit=1000", source_url, sort)
-	fmt.Printf(target_url)
 	req, _ := http.NewRequest("GET", target_url, nil)
 	req.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
 
