@@ -1,6 +1,7 @@
 package parser
 
 import (
+	//"fmt"
 	models "github.com/AlienStream/Shared-Go/models"
 )
 
@@ -15,12 +16,14 @@ func Update(source models.Source) {
 		[]models.Post{},
 	}
 
-	source_data.getFreshData()
+	source_data = source_data.getFreshData()
 
 	// update the source meta info
-
+	source_data.Source.Save()
 	// update the posts
-
+	for _, post := range source_data.Posts {
+		post.Save()
+	}
 }
 
 func (data DataObject) getFreshData() DataObject {

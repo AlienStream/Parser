@@ -62,21 +62,23 @@ func getRedditSubredditData(source_data DataObject) DataObject {
 
 	// TODO: Multithread this into a queueable worker that respects the reddit limits
 	raw_posts := getRawSubredditPosts(source_data.Source.Url, "sort=hot")
-	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url, "sort=top&t=day")...)
-	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url, "sort=top&t=week")...)
-	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url, "sort=top&t=month")...)
-	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url, "sort=top&t=year")...)
-	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url, "sort=top&t=all")...)
+	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url+"/top/", "sort=top&t=day")...)
+	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url+"/top/", "sort=top&t=week")...)
+	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url+"/top/", "sort=top&t=month")...)
+	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url+"/top/", "sort=top&t=year")...)
+	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url+"/top/", "sort=top&t=all")...)
 
 	for _, raw_post := range raw_posts {
-		if strings.Contains(raw_post.Url, "soundcloud.com") || strings.Contains(raw_post.Url, "youtube.com") || strings.Contains(raw_post.Url, "youtu.be") {
-			fmt.Printf("Found %s \n", raw_post.Title)
+		if strings.Contains(raw_post.Url, "soundcloud.com") || strings.Contains(raw_post.Url, "youtube.com") || strings.Contains(raw_post.Url, "youtu.b e") {
+
 			post := models.Post{
 				Id:                 0,
+				Source_id:          source_data.Source.Id,
 				Title:              raw_post.Title,
 				Number_of_comments: raw_post.Num_Comments,
 				Permalink:          raw_post.Permalink,
 				Thumbnail:          raw_post.Thumbnail,
+				Embed_url:          raw_post.Url,
 				Likes:              raw_post.Upvotes,
 				Dislikes:           raw_post.Downvotes,
 				Submitter:          raw_post.Submitted_by,
@@ -94,8 +96,9 @@ func getRawSubredditPosts(source_url string, sort string) []redditPost {
 
 	// TODO: Paginated Results Gaunteeing at least 200 playable tracks
 	target_url := fmt.Sprintf("%s.json?%s&limit=1000", source_url, sort)
+	fmt.Printf(target_url)
 	req, _ := http.NewRequest("GET", target_url, nil)
-	req.Header.Set("User-Agent", "AlienStream Master Server v. 1.0")
+	req.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
 
 	resp, request_err := client.Do(req)
 	defer resp.Body.Close()
@@ -124,7 +127,7 @@ func getRawSubredditMeta(source_url string) SubredditInfo {
 	client := &http.Client{}
 	request_url := fmt.Sprintf("%s/about.json", source_url)
 	request, _ := http.NewRequest("GET", request_url, nil)
-	request.Header.Set("User-Agent", "AlienStream Master Server v. 1.0")
+	request.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
 
 	response, request_err := client.Do(request)
 	if request_err != nil {
