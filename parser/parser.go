@@ -22,11 +22,11 @@ func Update(source models.Source) {
 	source_data.Source.Save()
 	// update the posts
 	for _, post := range source_data.Posts {
-		post_is_new, post_id := post.IsNew()
-		if post_is_new {
+		if post.IsNew() {
 			post.Insert()
 		} else {
-			post.Id = post_id
+			old_post := models.Post{}.Find(post.Source_id, post.Embed_url)
+			post.Id = old_post.Id
 			post.Save()
 		}
 	}
