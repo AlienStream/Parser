@@ -27,6 +27,7 @@ func Update(source models.Source) {
 		} else {
 			old_post := models.Post{}.Find(post.Source_id, post.Embed_url)
 			post.Id = old_post.Id
+			post.Is_new = true
 			post.Save()
 		}
 	}
