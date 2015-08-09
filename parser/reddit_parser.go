@@ -67,7 +67,7 @@ func getRedditSubredditData(source_data DataObject) DataObject {
 	raw_posts = append(raw_posts, getRawSubredditPosts(source_data.Source.Url+"/top/", "sort=top&t=all")...)
 
 	for _, raw_post := range raw_posts {
-		if strings.Contains(raw_post.Url, "soundcloud.com") || strings.Contains(raw_post.Url, "youtube.com") || strings.Contains(raw_post.Url, "youtu.b e") {
+		if strings.Contains(raw_post.Url, "soundcloud.com") || strings.Contains(raw_post.Url, "youtube.com") || strings.Contains(raw_post.Url, "youtu.be") {
 
 			post := models.Post{
 				Id:                 0,
