@@ -74,7 +74,7 @@ func getRedditSubredditData(source_data DataObject) DataObject {
 				Source_id:          source_data.Source.Id,
 				Title:              raw_post.Title,
 				Number_of_comments: raw_post.Num_Comments,
-				Permalink:          raw_post.Permalink,
+				Permalink:          "https://reddit.com" + raw_post.Permalink,
 				Thumbnail:          raw_post.Thumbnail,
 				Embed_url:          raw_post.Url,
 				Likes:              raw_post.Upvotes,
@@ -109,7 +109,7 @@ func getRawSubredditPosts(source_url string, sort string) []redditPost {
 	decode_err := decoder.Decode(&data)
 
 	if decode_err != nil {
-		panic(decode_err)
+		panic(resp.Body)
 	}
 
 	var posts []redditPost

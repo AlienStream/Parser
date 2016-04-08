@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-
+        updateALLSources()
         longinterval := time.NewTicker(time.Minute * 15).C;
             for {
                 select {
