@@ -1,27 +1,17 @@
 package parser
 
 import (
-	//"fmt"
 	models "github.com/AlienStream/Shared-Go/models"
+	"parser/reddit_parser"
 )
 
-type DataObject struct {
-	Source models.Source
-	Posts  []models.Post
-}
-
 func Update(source models.Source) {
-	source_data := DataObject{
-		source,
-		[]models.Post{},
-	}
+	updateSourceMetaData(&source)
+	source.Save()
 
-	source_data = source_data.getFreshData()
-
-	// update the source meta info
-	source_data.Source.Save()
 	// update the posts
-	for _, post := range source_data.Posts {
+	posts := fetchNewPosts(source)
+	for _, post := range posts {
 		if post.IsNew() {
 			post.Insert()
 		} else {
@@ -33,24 +23,45 @@ func Update(source models.Source) {
 	}
 }
 
-func (data DataObject) getFreshData() DataObject {
-	if data.Source.Type == "reddit/subreddit" {
-		data = getRedditSubredditData(data)
+func updateSourceMetaData(source *models.Source) {
+	switch (source.Type) {
+		case "reddit/subreddit":
+			reddit_parser.UpdateSourceMetaData(source)
+			break;
+		// case "youtube/channel":
+		// 	getYoutubeChannelData(data)
+		// 	break;
+		// case "youtube/playlist":
+		// 	getYoutubePlaylistData(data)
+		// 	break;
+		// case "soundcloud/channel":
+		// 	getSoundcloudChannelData(data)
+		// 	break;
+		// case "reddit/subreddit":
+		// 	getSoundcloudPlaylistData(data)
+		// 	break;
+		// case "blog/rss":
+		// 	getBlogRSSData(data)
+		// 	break;
 	}
-	if data.Source.Type == "youtube/channel" {
-		data = getYoutubeChannelData(data)
-	}
-	if data.Source.Type == "youtube/playlist" {
-		data = getYoutubePlaylistData(data)
-	}
-	if data.Source.Type == "soundcloud/channel" {
-		data = getSoundcloudChannelData(data)
-	}
-	if data.Source.Type == "soundcloud/playlist" {
-		data = getSoundcloudPlaylistData(data)
-	}
-	if data.Source.Type == "blog/rss" {
-		data = getBlogRSSData(data)
-	}
-	return data
 }
+
+func fetchNewPosts(source models.Source) []models.Post {
+	switch (source.Type) {
+		case "reddit/subreddit":
+			return reddit_parser.FetchPostsFromSource(source)
+		// case "youtube/channel":
+		// 	return getRedditSubredditPosts(source)
+		// case "youtube/playlist":
+		// 	return getRedditSubredditPosts(source)
+		// case "soundcloud/channel":
+		// 	return getRedditSubredditPosts(source)
+		// case "reddit/subreddit":
+		// 	return getRedditSubredditPosts(source)
+		// case "blog/rss":
+		// 	return getRedditSubredditPosts(source)
+	}
+
+	panic("Invalid Source Type");
+}
+

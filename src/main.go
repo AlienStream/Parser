@@ -1,7 +1,7 @@
 package main
 
 import (
-        "parser"
+    "parser"
 	db "github.com/AlienStream/Shared-Go/database"
 	models "github.com/AlienStream/Shared-Go/models"
 	"time"

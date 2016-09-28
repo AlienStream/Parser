@@ -1,4 +1,4 @@
-package parser
+package soundcloud_parser
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ type SoundcloudTrack struct {
 	User         SoundcloudUser `json:"user"`
 }
 
-func getSoundcloudChannelData(source_data DataObject) DataObject {
+func getSoundcloudChannelData(source_data *DataObject) DataObject {
 	fmt.Printf("Updating %s \n", source_data.Source.Title)
 	info := getRawSoundcloudChannelMeta(source_data.Source.Url)
 	source_data.Source.Title = info.Username
@@ -58,7 +58,7 @@ func getSoundcloudChannelData(source_data DataObject) DataObject {
 		source_data.Posts = append(source_data.Posts, post)
 	}
 
-	return source_data
+	return *source_data
 }
 
 func getRawSoundcloudChannelMeta(source_url string) SoundcloudUser {
@@ -111,7 +111,7 @@ func getRawSoundcloudTracks(source_url string) []SoundcloudTrack {
 	return data
 }
 
-func getSoundcloudPlaylistData(source_data DataObject) DataObject {
+func getSoundcloudPlaylistData(source_data *DataObject) DataObject {
 	fmt.Printf("Updating %s \n", source_data.Source.Title)
 	return DataObject{}
 }
