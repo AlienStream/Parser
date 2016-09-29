@@ -5,6 +5,11 @@ import (
 	"parser/reddit_parser"
 )
 
+type Parser interface {
+	UpdateSourceMetaData(*models.Source)
+	FetchPostsFromSource(models.Source) []models.Post
+}
+
 func Update(source models.Source) {
 	updateSourceMetaData(&source)
 	source.Save()
@@ -24,9 +29,11 @@ func Update(source models.Source) {
 }
 
 func updateSourceMetaData(source *models.Source) {
+	var parser Parser;
+
 	switch (source.Type) {
 		case "reddit/subreddit":
-			reddit_parser.UpdateSourceMetaData(source)
+			parser = reddit_parser.Parser{}
 			break;
 		// case "youtube/channel":
 		// 	getYoutubeChannelData(data)
@@ -44,12 +51,16 @@ func updateSourceMetaData(source *models.Source) {
 		// 	getBlogRSSData(data)
 		// 	break;
 	}
+
+	parser.UpdateSourceMetaData(source)
 }
 
 func fetchNewPosts(source models.Source) []models.Post {
+	var parser Parser;
+
 	switch (source.Type) {
 		case "reddit/subreddit":
-			return reddit_parser.FetchPostsFromSource(source)
+			parser = reddit_parser.Parser{}
 		// case "youtube/channel":
 		// 	return getRedditSubredditPosts(source)
 		// case "youtube/playlist":
@@ -62,6 +73,6 @@ func fetchNewPosts(source models.Source) []models.Post {
 		// 	return getRedditSubredditPosts(source)
 	}
 
-	panic("Invalid Source Type");
+	return parser.FetchPostsFromSource(source)
 }
 

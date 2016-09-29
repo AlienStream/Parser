@@ -10,14 +10,17 @@ import (
 	"time"
 )
 
-func UpdateSourceMetaData(source *models.Source) {
+type Parser struct {
+}
+
+func (Parser) UpdateSourceMetaData(source *models.Source) {
 	info := getRawSubredditMeta(source.Url)
 	source.Title = info.Title
 	source.Description = info.Description
 	source.Thumbnail = info.Thumbnail
 }
 
-func FetchPostsFromSource(source models.Source) []models.Post {
+func (Parser) FetchPostsFromSource(source models.Source) []models.Post {
 
 	var posts []models.Post = []models.Post{}
 
