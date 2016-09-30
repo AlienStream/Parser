@@ -2,6 +2,7 @@ package soundcloud_parser
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -10,43 +11,28 @@ import (
 	models "github.com/AlienStream/Shared-Go/models"
 )
 
-type Parser struct {
-}
-
 const SOUNDCLOUD_CLIENT_ID = "ff43d208510d35ce49ed972b01f116ab"
 
-type SoundcloudUser struct {
-	Permalink   string `json:"permalink_url"`
-	Username    string `json:"username"`
-	Description string `json:"description"`
-	Thumbnail   string `json:"avatar_url"`
+func (Parser) UpdateSourceMetaData(source *models.Source) error {
+	info, err := getRawSoundcloudChannelMeta(source.Url)
+
+	if err == nil {
+		source.Title = info.Username
+		source.Description = info.Description
+		source.Thumbnail = info.Thumbnail
+	}
+
+	return err
 }
 
-type SoundcloudTrack struct {
-	Title        string         `json:"title"`
-	Permalink    string         `json:"permalink_url"`
-	Thumbnail    string         `json:"artwork_url"`
-	Submitted_by string         `json:"username"`
-	Created_at   string         `json:"created_at"`
-	Comments     int            `json:"comment_count"`
-	Favorites    int            `json:"favoritings_count"`
-	User         SoundcloudUser `json:"user"`
-}
-
-func (Parser) UpdateSourceMetaData(source *models.Source) {
-	info := getRawSoundcloudChannelMeta(source.Url)
-	source.Title = info.Username
-	source.Description = info.Description
-	source.Thumbnail = info.Thumbnail
-}
-
-func (Parser) FetchPostsFromSource(source models.Source) []models.Post {
-
-	var posts []models.Post = []models.Post{}
+func (Parser) FetchPostsFromSource(source models.Source) ([]models.Post, error) {
+	posts := []models.Post{}
 
 	// TODO: Multithread this into a queueable worker that respects the soundcloud limits
-	raw_posts := getRawSoundcloudTracks(source.Url)
-
+	raw_posts, err := getRawSoundcloudTracks(source.Url)
+	if err != nil {
+		return posts, err
+	}
 	for _, raw_post := range raw_posts {
 		post := models.Post{
 			Id:                 0,
@@ -65,58 +51,80 @@ func (Parser) FetchPostsFromSource(source models.Source) []models.Post {
 		posts = append(posts, post)
 	}
 
-	return posts
+	return posts, nil
 }
 
-func getRawSoundcloudChannelMeta(source_url string) SoundcloudUser {
-	client := &http.Client{}
+func getRawSoundcloudChannelMeta(source_url string) (SoundcloudUser, error) {
+	data := SoundcloudUser{}
+
 	request_url := strings.Replace(source_url, "://soundcloud.com/", "://api.soundcloud.com/users/", -1)
 	request_url += "?client_id=" + SOUNDCLOUD_CLIENT_ID
+
+	// Make Our Request
 	request, _ := http.NewRequest("GET", request_url, nil)
 	request.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
-
-	response, request_err := client.Do(request)
+	response, request_err := (&http.Client{}).Do(request)
 	if request_err != nil {
-		panic(request_err)
+		return data, request_err
 	}
+
+	if response.StatusCode != 200 {
+		return data, errors.New("Response Was Not 200, Instead found:" + (string)(response.StatusCode))
+	}
+
+	// Parse the Response
 	defer response.Body.Close()
-	data := SoundcloudUser{}
 	temp, _ := ioutil.ReadAll(response.Body)
-
 	parse_err := json.Unmarshal(temp, &data)
-
 	if parse_err != nil {
-		panic("Requester failed to fetch from source")
+		return data, parse_err
 	}
 
-	return data
+	return data, nil
 }
 
-func getRawSoundcloudTracks(source_url string) []SoundcloudTrack {
-	client := &http.Client{}
+func getRawSoundcloudTracks(source_url string) ([]SoundcloudTrack, error) {
+	data := []SoundcloudTrack{}
+
 	request_url := strings.Replace(source_url, "://soundcloud.com/", "://api.soundcloud.com/users/", -1)
 	request_url += "/tracks?client_id=" + SOUNDCLOUD_CLIENT_ID
+
+	// Make Our Request
 	request, _ := http.NewRequest("GET", request_url, nil)
 	request.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
-
-	response, request_err := client.Do(request)
+	response, request_err := (&http.Client{}).Do(request)
 	if request_err != nil {
-		panic(request_err)
+		return data, request_err
 	}
 
+	// Parse the response
 	defer response.Body.Close()
-	data := []SoundcloudTrack{}
 	temp, _ := ioutil.ReadAll(response.Body)
 	parse_err := json.Unmarshal(temp, &data)
-
 	if parse_err != nil {
-		panic("Requester failed to fetch from source")
+		return data, parse_err
 	}
 
-	return data
+	return data, nil
 }
 
-// func getSoundcloudPlaylistData(source_data *DataObject) DataObject {
-// 	fmt.Printf("Updating %s \n", source_data.Source.Title)
-// 	return DataObject{}
-// }
+type Parser struct {
+}
+
+type SoundcloudUser struct {
+	Permalink   string `json:"permalink_url"`
+	Username    string `json:"username"`
+	Description string `json:"description"`
+	Thumbnail   string `json:"avatar_url"`
+}
+
+type SoundcloudTrack struct {
+	Title        string         `json:"title"`
+	Permalink    string         `json:"permalink_url"`
+	Thumbnail    string         `json:"artwork_url"`
+	Submitted_by string         `json:"username"`
+	Created_at   string         `json:"created_at"`
+	Comments     int            `json:"comment_count"`
+	Favorites    int            `json:"favoritings_count"`
+	User         SoundcloudUser `json:"user"`
+}

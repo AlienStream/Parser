@@ -9,8 +9,8 @@ import (
 func TestParser(t *testing.T) {
 	reddit_source := SourceFactory("reddit/subreddit")
 
-	Parser{}.UpdateSourceMetaData(&reddit_source)
-	if reddit_source.Title != "HipHopHeads" {
+	update_err := Parser{}.UpdateSourceMetaData(&reddit_source)
+	if update_err != nil || reddit_source.Title != "HipHopHeads" {
 		t.Error("Expected: Title", "HipHopHeads", "Received:", reddit_source.Title)
 	}
 
@@ -25,6 +25,7 @@ func TestParser(t *testing.T) {
 	if err == nil {
 		t.Error("Error Not Returned Properly")
 	}
+
 	_, err = Parser{}.FetchPostsFromSource(reddit_source)
 	if err == nil {
 		t.Error("Error Not Returned Properly")

@@ -38,7 +38,6 @@ func Update(source models.Source) {
 // so we can Multithread requests to multiple sources at the same time
 func updateSourceMetaData(source *models.Source) error {
 	var parser Parser
-	var err error
 
 	switch source.Type {
 	case "reddit/subreddit":
@@ -61,7 +60,7 @@ func updateSourceMetaData(source *models.Source) error {
 		// 	break;
 	}
 
-	parser.UpdateSourceMetaData(source)
+	return parser.UpdateSourceMetaData(source)
 }
 
 func fetchNewPosts(source models.Source) ([]models.Post, error) {

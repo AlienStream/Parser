@@ -11,9 +11,6 @@ import (
 	models "github.com/AlienStream/Shared-Go/models"
 )
 
-type Parser struct {
-}
-
 func (Parser) UpdateSourceMetaData(source *models.Source) error {
 	info, err := getRawSubredditMeta(source.Url)
 
@@ -27,7 +24,7 @@ func (Parser) UpdateSourceMetaData(source *models.Source) error {
 }
 
 func (Parser) FetchPostsFromSource(source models.Source) ([]models.Post, error) {
-	var posts []models.Post = []models.Post{}
+	posts := []models.Post{}
 	var error_occured error
 
 	var request_urls = make(map[string]string)
@@ -77,7 +74,7 @@ func postIsEmbeddable(raw_post *redditPost) bool {
 
 func getRawSubredditPosts(source_url string, sort string) ([]redditPost, error) {
 	// Setup Our Default Return Value
-	var posts []redditPost
+	posts := []redditPost{}
 
 	// Make Our Request
 	// TODO: Paginated Results Guaranteeing at least 200 playable tracks
@@ -85,12 +82,12 @@ func getRawSubredditPosts(source_url string, sort string) ([]redditPost, error) 
 	req, _ := http.NewRequest("GET", request_url, nil)
 	req.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
 	resp, request_err := (&http.Client{}).Do(req)
-	defer resp.Body.Close()
 	if request_err != nil {
 		return posts, request_err
 	}
 
 	var data RedditRoot
+	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
 	decoder.UseNumber()
 	decode_err := decoder.Decode(&data)
@@ -118,12 +115,12 @@ func getRawSubredditMeta(source_url string) (SubredditInfo, error) {
 	request, _ := http.NewRequest("GET", request_url, nil)
 	request.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
 	response, request_err := (&http.Client{}).Do(request)
-	defer response.Body.Close()
 	if request_err != nil {
 		return data.Data, request_err
 	}
 
 	// Parse our Data
+	defer response.Body.Close()
 	temp, _ := ioutil.ReadAll(response.Body)
 	parse_err := json.Unmarshal(temp, &data)
 	if parse_err != nil {
@@ -132,6 +129,9 @@ func getRawSubredditMeta(source_url string) (SubredditInfo, error) {
 
 	// return just the info we need, reddit data nesting is dumb
 	return data.Data, nil
+}
+
+type Parser struct {
 }
 
 ////////////////////////////////
