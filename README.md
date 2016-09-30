@@ -9,6 +9,8 @@ How we get data into alienstream
 
  * set GOBIN to $GOPATH/bin
 
+ * run tests with `go test parser/...`
+
 ### Building
 
  * run go install src/main.go

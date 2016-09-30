@@ -2,13 +2,16 @@ package soundcloud_parser
 
 import (
 	"encoding/json"
-	"fmt"
-	models "github.com/AlienStream/Shared-Go/models"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	models "github.com/AlienStream/Shared-Go/models"
 )
+
+type Parser struct {
+}
 
 const SOUNDCLOUD_CLIENT_ID = "ff43d208510d35ce49ed972b01f116ab"
 
@@ -30,20 +33,24 @@ type SoundcloudTrack struct {
 	User         SoundcloudUser `json:"user"`
 }
 
-func getSoundcloudChannelData(source_data *DataObject) DataObject {
-	fmt.Printf("Updating %s \n", source_data.Source.Title)
-	info := getRawSoundcloudChannelMeta(source_data.Source.Url)
-	source_data.Source.Title = info.Username
-	source_data.Source.Description = info.Description
-	source_data.Source.Thumbnail = info.Thumbnail
+func (Parser) UpdateSourceMetaData(source *models.Source) {
+	info := getRawSoundcloudChannelMeta(source.Url)
+	source.Title = info.Username
+	source.Description = info.Description
+	source.Thumbnail = info.Thumbnail
+}
 
-	// TODO: Multithread this into a queueable worker that respects the reddit limits
-	raw_posts := getRawSoundcloudTracks(source_data.Source.Url)
+func (Parser) FetchPostsFromSource(source models.Source) []models.Post {
+
+	var posts []models.Post = []models.Post{}
+
+	// TODO: Multithread this into a queueable worker that respects the soundcloud limits
+	raw_posts := getRawSoundcloudTracks(source.Url)
 
 	for _, raw_post := range raw_posts {
 		post := models.Post{
 			Id:                 0,
-			Source_id:          source_data.Source.Id,
+			Source_id:          source.Id,
 			Title:              raw_post.Title,
 			Number_of_comments: raw_post.Comments,
 			Permalink:          raw_post.Permalink,
@@ -55,10 +62,10 @@ func getSoundcloudChannelData(source_data *DataObject) DataObject {
 		}
 		post.Posted_at, _ = time.Parse("2006/01/02 15:04:05 -0700", raw_post.Created_at)
 
-		source_data.Posts = append(source_data.Posts, post)
+		posts = append(posts, post)
 	}
 
-	return *source_data
+	return posts
 }
 
 func getRawSoundcloudChannelMeta(source_url string) SoundcloudUser {
@@ -72,7 +79,6 @@ func getRawSoundcloudChannelMeta(source_url string) SoundcloudUser {
 	if request_err != nil {
 		panic(request_err)
 	}
-
 	defer response.Body.Close()
 	data := SoundcloudUser{}
 	temp, _ := ioutil.ReadAll(response.Body)
@@ -101,7 +107,6 @@ func getRawSoundcloudTracks(source_url string) []SoundcloudTrack {
 	defer response.Body.Close()
 	data := []SoundcloudTrack{}
 	temp, _ := ioutil.ReadAll(response.Body)
-
 	parse_err := json.Unmarshal(temp, &data)
 
 	if parse_err != nil {
@@ -111,7 +116,7 @@ func getRawSoundcloudTracks(source_url string) []SoundcloudTrack {
 	return data
 }
 
-func getSoundcloudPlaylistData(source_data *DataObject) DataObject {
-	fmt.Printf("Updating %s \n", source_data.Source.Title)
-	return DataObject{}
-}
+// func getSoundcloudPlaylistData(source_data *DataObject) DataObject {
+// 	fmt.Printf("Updating %s \n", source_data.Source.Title)
+// 	return DataObject{}
+// }

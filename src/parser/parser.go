@@ -1,13 +1,15 @@
 package parser
 
 import (
-	models "github.com/AlienStream/Shared-Go/models"
 	"parser/reddit_parser"
+	"parser/soundcloud_parser"
+
+	models "github.com/AlienStream/Shared-Go/models"
 )
 
 type Parser interface {
-	UpdateSourceMetaData(*models.Source)
-	FetchPostsFromSource(models.Source) []models.Post
+	UpdateSourceMetaData(*models.Source) error
+	FetchPostsFromSource(models.Source) ([]models.Post, error)
 }
 
 func Update(source models.Source) {
@@ -15,35 +17,42 @@ func Update(source models.Source) {
 	source.Save()
 
 	// update the posts
-	posts := fetchNewPosts(source)
-	for _, post := range posts {
-		if post.IsNew() {
-			post.Insert()
-		} else {
-			old_post := models.Post{}.Find(post.Source_id, post.Embed_url)
-			post.Id = old_post.Id
-			post.Is_new = true
-			post.Save()
+	posts, err := fetchNewPosts(source)
+	if err == nil {
+		for _, post := range posts {
+			if post.IsNew() {
+				post.Insert()
+			} else {
+				old_post := models.Post{}.Find(post.Source_id, post.Embed_url)
+				post.Id = old_post.Id
+				post.Is_new = true
+				post.Save()
+			}
 		}
+	} else {
+		// Log errors
 	}
 }
 
-func updateSourceMetaData(source *models.Source) {
-	var parser Parser;
+// TODO: each parser should be a singleton that can block on a per source basis
+// so we can Multithread requests to multiple sources at the same time
+func updateSourceMetaData(source *models.Source) error {
+	var parser Parser
+	var err error
 
-	switch (source.Type) {
-		case "reddit/subreddit":
-			parser = reddit_parser.Parser{}
-			break;
+	switch source.Type {
+	case "reddit/subreddit":
+		parser = reddit_parser.Parser{}
+		break
 		// case "youtube/channel":
 		// 	getYoutubeChannelData(data)
 		// 	break;
 		// case "youtube/playlist":
 		// 	getYoutubePlaylistData(data)
 		// 	break;
-		// case "soundcloud/channel":
-		// 	getSoundcloudChannelData(data)
-		// 	break;
+	case "soundcloud/channel":
+		parser = soundcloud_parser.Parser{}
+		break
 		// case "reddit/subreddit":
 		// 	getSoundcloudPlaylistData(data)
 		// 	break;
@@ -55,18 +64,19 @@ func updateSourceMetaData(source *models.Source) {
 	parser.UpdateSourceMetaData(source)
 }
 
-func fetchNewPosts(source models.Source) []models.Post {
-	var parser Parser;
+func fetchNewPosts(source models.Source) ([]models.Post, error) {
+	var parser Parser
 
-	switch (source.Type) {
-		case "reddit/subreddit":
-			parser = reddit_parser.Parser{}
-		// case "youtube/channel":
-		// 	return getRedditSubredditPosts(source)
-		// case "youtube/playlist":
-		// 	return getRedditSubredditPosts(source)
-		// case "soundcloud/channel":
-		// 	return getRedditSubredditPosts(source)
+	switch source.Type {
+	case "reddit/subreddit":
+		parser = reddit_parser.Parser{}
+		break
+	// case "youtube/channel":
+	// 	return getRedditSubredditPosts(source)
+	// case "youtube/playlist":
+	// 	return getRedditSubredditPosts(source)
+	case "soundcloud/channel":
+		parser = soundcloud_parser.Parser{}
 		// case "reddit/subreddit":
 		// 	return getRedditSubredditPosts(source)
 		// case "blog/rss":
@@ -75,4 +85,3 @@ func fetchNewPosts(source models.Source) []models.Post {
 
 	return parser.FetchPostsFromSource(source)
 }
-

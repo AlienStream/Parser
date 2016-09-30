@@ -1,12 +1,14 @@
 package main
 
 import (
-    "parser"
+	"parser"
+	"time"
+
 	db "github.com/AlienStream/Shared-Go/database"
 	models "github.com/AlienStream/Shared-Go/models"
-	"time"
 )
 
+// TODO: select sources by type, then put each queue on it's own thread
 func main() {
 	updateALLSources()
 
