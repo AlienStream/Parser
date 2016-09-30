@@ -5,6 +5,7 @@ import (
 	"parser/soundcloud_parser"
 
 	models "github.com/AlienStream/Shared-Go/models"
+	"github.com/bugsnag/bugsnag-go"
 )
 
 type Parser interface {
@@ -13,8 +14,12 @@ type Parser interface {
 }
 
 func Update(source models.Source) {
-	updateSourceMetaData(&source)
-	source.Save()
+	update_err := updateSourceMetaData(&source)
+	if update_err == nil {
+		source.Save()
+	} else {
+		bugsnag.Notify(update_err)
+	}
 
 	// update the posts
 	posts, err := fetchNewPosts(source)
@@ -30,7 +35,7 @@ func Update(source models.Source) {
 			}
 		}
 	} else {
-		// Log errors
+		bugsnag.Notify(err)
 	}
 }
 
