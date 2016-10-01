@@ -4,8 +4,6 @@ import (
 	"parser"
 	"time"
 
-	"github.com/bugsnag/bugsnag-go"
-
 	db "github.com/AlienStream/Shared-Go/database"
 	models "github.com/AlienStream/Shared-Go/models"
 )
@@ -18,9 +16,9 @@ func main() {
 
 	update_interval := time.Minute * 15
 
-	bugsnag.Configure(bugsnag.Configuration{
-		APIKey: "14d6cbfd67182668a12d97372c33f13e",
-	})
+	//bugsnag.Configure(bugsnag.Configuration{
+	//		APIKey: "14d6cbfd67182668a12d97372c33f13e",
+	//	})
 
 	for _, source_type := range source_types {
 		// select sources by type, then put each queue on it's own thread
