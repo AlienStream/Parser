@@ -6,7 +6,7 @@ import (
 	models "github.com/AlienStream/Shared-Go/models"
 )
 
-func TestParser(t *testing.T) {
+func TestChannels(t *testing.T) {
 	soundcloud_channel_source := SourceFactory("soundcloud/channel")
 
 	update_err := Parser{}.UpdateSourceMetaData(&soundcloud_channel_source)
@@ -40,6 +40,28 @@ func TestParser(t *testing.T) {
 	}
 }
 
+func TestPlaylists(t *testing.T) {
+	soundcloud_playlist_source := SourceFactory("soundcloud/playlist")
+
+	update_err := Parser{}.UpdateSourceMetaData(&soundcloud_playlist_source)
+	if update_err != nil || soundcloud_playlist_source.Title != "THE PERFECT LUV TAPE®️" {
+		t.Error("Expected: Title", "THE PERFECT LUV TAPE®️", "Received:", soundcloud_playlist_source.Title)
+	}
+
+	soundcloud_playlist_posts, err := Parser{}.FetchPostsFromSource(soundcloud_playlist_source)
+	if err != nil || len(soundcloud_playlist_posts) == 0 {
+		t.Error("Couldn't fetch new posts for soundcloud source")
+	}
+
+	// Try Some Broken Ones
+	soundcloud_playlist_source.Url = "https://soundcloud.com/sets/bassnectarasdsa"
+	update_err = Parser{}.UpdateSourceMetaData(&soundcloud_playlist_source)
+	if update_err == nil {
+		t.Error("Error Not Properly being returned")
+	}
+
+}
+
 func SourceFactory(source_type string) models.Source {
 	var source models.Source
 
@@ -48,6 +70,12 @@ func SourceFactory(source_type string) models.Source {
 		source = models.Source{
 			Type: source_type,
 			Url:  "https://soundcloud.com/liluzivert",
+		}
+		return source
+	case "soundcloud/playlist":
+		source = models.Source{
+			Type: source_type,
+			Url:  "https://soundcloud.com/sets/the-perfect-luv-tape-r",
 		}
 		return source
 	}

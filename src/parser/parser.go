@@ -81,6 +81,10 @@ func fetchNewPosts(source models.Source) ([]models.Post, error) {
 	// 	return getRedditSubredditPosts(source)
 	case "soundcloud/channel":
 		parser = soundcloud_parser.Parser{}
+		break
+	case "soundcloud/playlist":
+		parser = soundcloud_parser.Parser{}
+		break
 		// case "reddit/subreddit":
 		// 	return getRedditSubredditPosts(source)
 		// case "blog/rss":

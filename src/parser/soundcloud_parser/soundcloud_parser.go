@@ -14,25 +14,51 @@ import (
 const SOUNDCLOUD_CLIENT_ID = "ff43d208510d35ce49ed972b01f116ab"
 
 func (Parser) UpdateSourceMetaData(source *models.Source) error {
-	info, err := getRawSoundcloudChannelMeta(source.Url)
+	var err error
 
-	if err == nil {
-		source.Title = info.Username
-		source.Description = info.Description
-		source.Thumbnail = info.Thumbnail
+	if strings.Contains(source.Url, "sets") {
+		var info SoundcloudPlaylist
+		info, err = getRawSoundcloudPlaylist(source.Url)
+
+		if err == nil {
+			source.Title = info.Title
+			source.Description = info.Description
+			source.Thumbnail = info.Thumbnail
+		}
+	} else {
+		var info SoundcloudUser
+		info, err = getRawSoundcloudChannel(source.Url)
+
+		if err == nil {
+			source.Title = info.Username
+			source.Description = info.Description
+			source.Thumbnail = info.Thumbnail
+		}
 	}
 
 	return err
 }
 
 func (Parser) FetchPostsFromSource(source models.Source) ([]models.Post, error) {
+	var err error
 	posts := []models.Post{}
+	raw_posts := []SoundcloudTrack{}
+	playlist := SoundcloudPlaylist{}
 
 	// TODO: Multithread this into a queueable worker that respects the soundcloud limits
-	raw_posts, err := getRawSoundcloudTracks(source.Url)
-	if err != nil {
-		return posts, err
+	if strings.Contains(source.Url, "sets") {
+		playlist, err = getRawSoundcloudPlaylist(source.Url)
+		if err != nil {
+			return posts, err
+		}
+		raw_posts = playlist.Tracks
+	} else {
+		raw_posts, err = getRawSoundcloudTracks(source.Url)
+		if err != nil {
+			return posts, err
+		}
 	}
+
 	for _, raw_post := range raw_posts {
 		post := models.Post{
 			Id:                 0,
@@ -54,7 +80,36 @@ func (Parser) FetchPostsFromSource(source models.Source) ([]models.Post, error) 
 	return posts, nil
 }
 
-func getRawSoundcloudChannelMeta(source_url string) (SoundcloudUser, error) {
+func getRawSoundcloudPlaylist(source_url string) (SoundcloudPlaylist, error) {
+	data := SoundcloudPlaylist{}
+
+	request_url := strings.Replace(source_url, "://soundcloud.com/sets/", "://api.soundcloud.com/playlists/", -1)
+	request_url += "?client_id=" + SOUNDCLOUD_CLIENT_ID
+
+	// Make Our Request
+	request, _ := http.NewRequest("GET", request_url, nil)
+	request.Header.Set("User-Agent", "AlienStream Master Server v. 2.0")
+	response, request_err := (&http.Client{}).Do(request)
+	if request_err != nil {
+		return data, request_err
+	}
+
+	if response.StatusCode != 200 {
+		return data, errors.New("Response Was Not 200, Instead found:" + (string)(response.StatusCode))
+	}
+
+	// Parse the Response
+	defer response.Body.Close()
+	temp, _ := ioutil.ReadAll(response.Body)
+	parse_err := json.Unmarshal(temp, &data)
+	if parse_err != nil {
+		return data, parse_err
+	}
+
+	return data, nil
+}
+
+func getRawSoundcloudChannel(source_url string) (SoundcloudUser, error) {
 	data := SoundcloudUser{}
 
 	request_url := strings.Replace(source_url, "://soundcloud.com/", "://api.soundcloud.com/users/", -1)
@@ -109,6 +164,14 @@ func getRawSoundcloudTracks(source_url string) ([]SoundcloudTrack, error) {
 }
 
 type Parser struct {
+}
+
+type SoundcloudPlaylist struct {
+	Permalink   string            `json:"permalink_url"`
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Thumbnail   string            `json:"avatar_url"`
+	Tracks      []SoundcloudTrack `json:"tracks"`
 }
 
 type SoundcloudUser struct {
